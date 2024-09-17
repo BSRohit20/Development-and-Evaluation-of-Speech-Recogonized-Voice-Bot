@@ -1,6 +1,6 @@
 IEEE PAPER - https://ieeexplore.ieee.org/document/10465431
 
-Speech Recocogonised Voice Bot (Alpha)
+Speech Recognised Voice Bot (Alpha)
 
 Alpha is a speech recocogonised voice bot that uses both machine learning (ML) and deep learning (DL) techniques for advanced tasks like speech recognition, natural language processing (NLP), and question-answering. It performs various tasks such as playing music, fetching weather information, setting reminders, translating languages, answering factual questions, and controlling your system.
 
