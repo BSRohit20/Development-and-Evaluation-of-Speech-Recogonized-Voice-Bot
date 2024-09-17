@@ -7,7 +7,14 @@ import pyjokes
 import requests
 import webbrowser
 import os
+import smtplib
 import math
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+from googletrans import Translator
+from transformers import pipeline
 
 # Initialize the recognizer and text-to-speech engine
 listener = sr.Recognizer()
@@ -15,13 +22,23 @@ engine = pyttsx3.init()
 voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[1].id)  # Use the second voice available
 
+# Google Translate API
+translator = Translator()
 
+# Initialize NLP model for Q&A
+qa_model = pipeline("question-answering")
+
+# Set your email details (Replace with actual credentials)
+EMAIL_ADDRESS = "your_email@example.com"
+EMAIL_PASSWORD = "your_password"
+
+# Function to convert text to speech
 def talk(text):
     """Converts text to speech."""
     engine.say(text)
     engine.runAndWait()
 
-
+# Function to take voice commands
 def take_command():
     """Listens for user commands and returns the recognized command."""
     try:
@@ -39,24 +56,44 @@ def take_command():
                 print('Command not recognized as intended for Alpha.')
                 return None
     except sr.RequestError:
-        print("API was unreachable or unresponsive.")
         talk("Sorry, I am unable to reach the recognition service.")
     except sr.UnknownValueError:
-        print("Unable to recognize speech.")
-        talk("Sorry, I did not catch that. Please say the command again.")
+        talk("Sorry, I didn't catch that. Please say the command again.")
     except Exception as e:
-        print(f"An error occurred: {e}")
-        talk("An error occurred while processing your request.")
+        talk(f"An error occurred: {e}")
     return None
 
+# Function to send emails
+def send_email(receiver_email, subject, body):
+    """Sends an email to the specified address."""
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = receiver_email
+        msg['Subject'] = subject
 
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        text = msg.as_string()
+        server.sendmail(EMAIL_ADDRESS, receiver_email, text)
+        server.quit()
+
+        talk('Email has been sent.')
+    except Exception as e:
+        talk('I was unable to send the email.')
+        print(f"Email error: {e}")
+
+# Function to get current weather
 def get_weather():
     """Fetches current weather data from OpenWeatherMap."""
     api_key = "your_openweather_api_key"
     base_url = "http://api.openweathermap.org/data/2.5/weather?"
     city_name = "your_city"
     complete_url = f"{base_url}appid={api_key}&q={city_name}&units=metric"
-    
+
     try:
         response = requests.get(complete_url)
         data = response.json()
@@ -72,72 +109,48 @@ def get_weather():
         talk("I was unable to fetch the weather information.")
         print(f"Weather API error: {e}")
 
-
-def get_news():
-    """Fetches latest news headlines using NewsAPI."""
-    api_key = "your_newsapi_key"
-    base_url = f"https://newsapi.org/v2/top-headlines?country=us&apiKey={api_key}"
-    
+# Function to set reminders
+def set_reminder(command):
+    """Sets a reminder based on voice command."""
     try:
-        response = requests.get(base_url)
-        news_data = response.json()
-        articles = news_data["articles"]
-        talk("Here are the top 3 news headlines.")
-        for i in range(3):
-            talk(articles[i]["title"])
+        reminder_time = command.replace('remind me to', '').strip()
+        time = datetime.datetime.now().strftime('%I:%M %p')
+        talk(f'Reminder set for {reminder_time}. Current time is {time}')
     except Exception as e:
-        talk("I was unable to fetch the news headlines.")
-        print(f"News API error: {e}")
+        talk('Failed to set a reminder.')
+        print(f"Reminder error: {e}")
 
-
-def get_affirmation():
-    """Provides a daily affirmation or motivational quote."""
-    affirmations = [
-        "You are capable of achieving great things.",
-        "Believe in yourself, and all that you are.",
-        "Every day is a new opportunity to grow and become better.",
-        "You are stronger than you think.",
-        "Stay positive, work hard, and make it happen."
-    ]
-    talk(affirmations[datetime.datetime.now().day % len(affirmations)])
-
-
-def do_math(command):
-    """Performs basic math calculations."""
+# Function for language translation
+def translate_text(command):
+    """Translates text between languages using Google Translate."""
     try:
-        if 'add' in command or '+' in command:
-            numbers = [int(s) for s in command.split() if s.isdigit()]
-            result = sum(numbers)
-        elif 'subtract' in command or '-' in command:
-            numbers = [int(s) for s in command.split() if s.isdigit()]
-            result = numbers[0] - sum(numbers[1:])
-        elif 'multiply' in command or '*' in command:
-            numbers = [int(s) for s in command.split() if s.isdigit()]
-            result = math.prod(numbers)
-        elif 'divide' in command or '/' in command:
-            numbers = [int(s) for s in command.split() if s.isdigit()]
-            result = numbers[0] / numbers[1]
-        else:
-            talk("I couldn't understand the math operation.")
-            return
-        talk(f"The result is {result}")
+        if 'translate' in command:
+            phrase = command.split('translate')[-1].strip()
+            translated_text = translator.translate(phrase, dest='es').text  # Translating to Spanish
+            talk(f'The translation is: {translated_text}')
     except Exception as e:
-        talk("I couldn't perform the calculation.")
-        print(f"Math calculation error: {e}")
+        talk("I couldn't translate the text.")
+        print(f"Translation error: {e}")
 
+# Function for answering factual questions
+def ask_question(question):
+    """Answers factual questions using pre-trained NLP model."""
+    try:
+        context = "Alpha bot is a speech assistant that can perform a variety of tasks, such as sending emails, setting reminders, telling jokes, and more."
+        result = qa_model(question=question, context=context)
+        talk(result['answer'])
+    except Exception as e:
+        talk("I couldn't find the answer to your question.")
+        print(f"Q&A error: {e}")
 
-def open_application(command):
-    """Opens common applications like a web browser or text editor."""
-    if 'browser' in command:
-        talk('Opening web browser.')
-        webbrowser.open('http://www.google.com')
-    elif 'notepad' in command:
-        talk('Opening notepad.')
-        os.system('notepad')
-    else:
-        talk('I am not sure how to open that application.')
+# Function to search on Google
+def search_google(query):
+    """Performs a Google search based on a voice query."""
+    search_query = query.replace('search for', '').strip()
+    webbrowser.open(f"https://www.google.com/search?q={search_query}")
+    talk(f'Searching Google for {search_query}')
 
-
+# Function to run the main assistant
 def run_alpha():
     """Main function that runs the assistant and processes commands."""
     command = take_command()
@@ -149,27 +162,29 @@ def run_alpha():
         elif 'time' in command:
             time = datetime.datetime.now().strftime('%I:%M %p')
             talk(f'Current time is {time}')
-        elif 'who is' in command or 'who the heck is' in command:
-            person = command.replace('who is', '').replace('who the heck is', '').strip()
+        elif 'who is' in command or 'what is' in command:
+            person = command.replace('who is', '').replace('what is', '').strip()
             info = wikipedia.summary(person, sentences=1)
-            print(info)
             talk(info)
-        elif 'date' in command:
-            talk('Sorry, I have a headache.')
-        elif 'are you single' in command:
-            talk('I am in a relationship with wifi.')
-        elif 'joke' in command:
-            talk(pyjokes.get_joke())
+        elif 'email' in command:
+            talk("What is the subject of the email?")
+            subject = take_command()
+            talk("What should I say in the email?")
+            body = take_command()
+            send_email("receiver_email@example.com", subject, body)  # Replace with actual recipient
+        elif 'remind me' in command:
+            set_reminder(command)
+        elif 'translate' in command:
+            translate_text(command)
+        elif 'search for' in command:
+            search_google(command)
         elif 'weather' in command:
             get_weather()
-        elif 'news' in command:
-            get_news()
-        elif 'affirmation' in command:
-            get_affirmation()
-        elif any(op in command for op in ['add', 'subtract', 'multiply', 'divide']):
-            do_math(command)
-        elif 'open' in command:
-            open_application(command)
+        elif 'question' in command:
+            question = command.replace('question', '').strip()
+            ask_question(question)
+        elif 'joke' in command:
+            talk(pyjokes.get_joke())
         elif 'shutdown' in command:
             talk('Shutting down the system.')
             os.system('shutdown /s /t 5')
@@ -180,7 +195,6 @@ def run_alpha():
             talk('I did not understand that command. Please say it again.')
     else:
         print("No command processed.")
-
 
 if __name__ == "__main__":
     while True:
