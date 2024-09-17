@@ -1,6 +1,6 @@
 IEEE PAPER - https://ieeexplore.ieee.org/document/10465431
 
-Speech Recognised Voice Bot (Alpha)
+### Speech Recognised Voice Bot (Alpha)
 
 Alpha is a speech recocogonised voice bot that uses both machine learning (ML) and deep learning (DL) techniques for advanced tasks like speech recognition, natural language processing (NLP), and question-answering. It performs various tasks such as playing music, fetching weather information, setting reminders, translating languages, answering factual questions, and controlling your system.
 
@@ -18,7 +18,7 @@ Features
 - **Google Search**: Search for anything on Google by saying, "Alpha, search for [topic]."
 - **System Control**: Control your system with commands like "Alpha, shutdown" or "Alpha, restart."
 
-### Machine Learning & Deep Learning Features
+## Machine Learning & Deep Learning Features
 
 - **Speech Recognition**: Alpha uses machine learning models for accurate and real-time speech recognition, allowing you to interact seamlessly.
 - **Natural Language Processing (NLP)**: Integrated deep learning models such as transformers are used for language understanding, helping Alpha comprehend complex commands and questions.
