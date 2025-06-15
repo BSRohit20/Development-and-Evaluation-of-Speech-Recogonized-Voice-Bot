@@ -1,5 +1,5 @@
-IEEE PAPER - https://ieeexplore.ieee.org/document/10465431
-LINK - https://bit.ly/Alphavoicebot
+#### IEEE PAPER - https://ieeexplore.ieee.org/document/10465431
+#### LINK - https://bit.ly/Alphavoicebot
 # 🚀 Alpha Full-Stack LLM + Sentiment Voice Assistant
 
 This project is a **full-stack machine learning voice assistant** that combines:
