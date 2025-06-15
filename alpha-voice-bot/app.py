@@ -6,7 +6,7 @@ import threading
 import speech_recognition as sr
 
 # 🔐 OpenRouter API Key and model
-API_KEY = "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"
+API_KEY = "API TOKEN"
 MODEL = "deepseek/deepseek-chat-v3-0324:free"
 
 def query_openrouter(messages, temperature=0.7):
